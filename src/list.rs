@@ -44,6 +44,17 @@ impl<T: Clone + Debug> PfList<T> {
                 Ok((value.clone(), PfList { head: next.clone() }))
         }
     }
+
+    pub fn rev(&self) -> Self {
+        let mut ret = PfList::new();
+        let mut cur = self.clone();
+        while !cur.is_empty() {
+            let (v, ncur) = cur.pop().unwrap();
+            ret = ret.push(v);
+            cur = ncur;
+        }
+        ret
+    }
 }
 
 #[cfg(test)]
@@ -63,5 +74,15 @@ mod tests {
         assert_eq!(42, v5);
         let (v6, _) = l2.pop().unwrap();
         assert_eq!(42, v6);
+    }
+
+    #[test]
+    fn test_rev() {
+        let l = PfList::<i32>::new().push(1).push(2).push(3);
+        let (v, _) = l.pop().unwrap();
+        assert_eq!(3, v);
+        let r = l.rev();
+        let (v, _) = r.pop().unwrap();
+        assert_eq!(1, v);
     }
 }
