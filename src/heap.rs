@@ -4,6 +4,14 @@ use std::fmt::Debug;
 use std::fmt::Display;
 use std::rc::Rc;
 
+trait Heap<T: Ord + Copy + Display + Debug>: Sized {
+    fn is_empty(&self) -> bool;
+    fn insert(&self, v: T) -> Self;
+    fn merge(&self, h: &Self) -> Self;
+    fn find_min(&self) -> Result<T, &str>;
+    fn delete_min(&self) -> Result<Self, &str>;
+}
+
 #[derive(Debug)]
 pub enum PfLeftistHeap<T: Ord + Copy + Display + Debug> {
     Empty,
@@ -18,14 +26,6 @@ pub enum PfLeftistHeap<T: Ord + Copy + Display + Debug> {
 impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
     pub fn new() -> Self {
         PfLeftistHeap::Empty
-    }
-
-    pub fn is_empty(&self) -> bool {
-        if let PfLeftistHeap::Empty = *self {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     fn rank(&self) -> i32 {
@@ -68,8 +68,18 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
             }
         }
     }
+}
 
-    pub fn insert(&self, v: T) -> Self {
+impl<T: Ord + Copy + Display + Debug> Heap<T> for PfLeftistHeap<T> {
+    fn is_empty(&self) -> bool {
+        if let PfLeftistHeap::Empty = *self {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn insert(&self, v: T) -> Self {
         self.merge(&PfLeftistHeap::Node {
             rank: 1,
             value: v,
@@ -78,7 +88,7 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
         })
     }
 
-    pub fn merge(&self, h: &Self) -> Self {
+    fn merge(&self, h: &Self) -> Self {
         match (self, h) {
             (&PfLeftistHeap::Empty, h) => h.copy(),
             (h, &PfLeftistHeap::Empty) => h.copy(),
@@ -94,7 +104,7 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
         }
     }
 
-    pub fn find_min(&self) -> Result<T, &str> {
+    fn find_min(&self) -> Result<T, &str> {
         match self {
             &PfLeftistHeap::Empty => Err("find_min for empty"),
             &PfLeftistHeap::Node { rank: _, value: v, left: _, right: _ } =>
@@ -102,7 +112,7 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
         }
     }
 
-    pub fn delete_min(&self) -> Result<Self, &str> {
+    fn delete_min(&self) -> Result<Self, &str> {
         match self {
             &PfLeftistHeap::Empty => Err("delete_min for empty"),
             &PfLeftistHeap::Node { rank: _, value: _, left: ref a, right: ref b } => {
@@ -111,7 +121,6 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
