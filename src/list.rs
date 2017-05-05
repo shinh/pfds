@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 #[derive(Debug)]
-enum PfListNode<T: Copy + Display + Debug> {
+enum PfListNode<T: Clone + Display + Debug> {
     Empty,
     Node {
         value: T,
@@ -11,11 +11,11 @@ enum PfListNode<T: Copy + Display + Debug> {
     }
 }
 
-pub struct PfList<T: Copy + Display + Debug> {
+pub struct PfList<T: Clone + Display + Debug> {
     head: Rc<PfListNode<T>>
 }
 
-impl<T: Copy + Display + Debug> PfList<T> {
+impl<T: Clone + Display + Debug> PfList<T> {
     pub fn is_empty(&self) -> bool {
         if let PfListNode::Empty = *self.head {
             return true;
