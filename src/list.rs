@@ -1,9 +1,8 @@
 use std::fmt::Debug;
-use std::fmt::Display;
 use std::rc::Rc;
 
 #[derive(Debug)]
-enum PfListNode<T: Clone + Display + Debug> {
+enum PfListNode<T: Clone + Debug> {
     Empty,
     Node {
         value: T,
@@ -11,11 +10,12 @@ enum PfListNode<T: Clone + Display + Debug> {
     }
 }
 
-pub struct PfList<T: Clone + Display + Debug> {
+#[derive(Clone, Debug)]
+pub struct PfList<T: Clone + Debug> {
     head: Rc<PfListNode<T>>
 }
 
-impl<T: Clone + Display + Debug> PfList<T> {
+impl<T: Clone + Debug> PfList<T> {
     pub fn is_empty(&self) -> bool {
         if let PfListNode::Empty = *self.head {
             return true;
@@ -45,7 +45,6 @@ impl<T: Clone + Display + Debug> PfList<T> {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

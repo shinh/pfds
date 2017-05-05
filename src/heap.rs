@@ -1,10 +1,11 @@
-// 3.1 Leftish heap
-
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::rc::Rc;
 
+use list::PfList;
+
 trait PfHeap<T: Ord + Clone + Display + Debug>: Sized {
+    fn new() -> Self;
     fn is_empty(&self) -> bool;
     fn insert(&self, v: T) -> Self;
     fn merge(&self, h: &Self) -> Self;
@@ -12,6 +13,7 @@ trait PfHeap<T: Ord + Clone + Display + Debug>: Sized {
     fn delete_min(&self) -> Result<Self, &str>;
 }
 
+// 3.1 Leftish heap
 #[derive(Debug)]
 pub enum PfLeftistHeap<T: Ord + Clone + Display + Debug> {
     Empty,
@@ -24,10 +26,6 @@ pub enum PfLeftistHeap<T: Ord + Clone + Display + Debug> {
 }
 
 impl<T: Ord + Clone + Display + Debug> PfLeftistHeap<T> {
-    pub fn new() -> Self {
-        PfLeftistHeap::Empty
-    }
-
     fn rank(&self) -> i32 {
         match self {
             &PfLeftistHeap::Empty => 0,
@@ -71,6 +69,10 @@ impl<T: Ord + Clone + Display + Debug> Clone for PfLeftistHeap<T> {
 }
 
 impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfLeftistHeap<T> {
+    fn new() -> Self {
+        PfLeftistHeap::Empty
+    }
+
     fn is_empty(&self) -> bool {
         if let PfLeftistHeap::Empty = *self {
             return true;
@@ -123,13 +125,117 @@ impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfLeftistHeap<T> {
     }
 }
 
+// 5.5 Pairing heap
+#[derive(Debug)]
+pub enum PfPairingHeap<T: Ord + Clone + Display + Debug> {
+    Empty,
+    Node {
+        value: T,
+        children: PfList<PfPairingHeap<T>>
+    }
+}
+
+impl<T: Ord + Clone + Display + Debug> PfPairingHeap<T> {
+    fn merge_pairs(hs: PfList<PfPairingHeap<T>>) -> Self {
+        match hs.pop() {
+            Ok((h1, hs)) => {
+                match hs.pop() {
+                    Ok((h2, hs)) => {
+                        h1.merge(&h2).merge(&PfPairingHeap::merge_pairs(hs))
+                    }
+                    Err(_) => h1
+                }
+            }
+            Err(_) => PfPairingHeap::Empty
+        }
+    }
+}
+
+impl<T: Ord + Clone + Display + Debug> Clone for PfPairingHeap<T> {
+    fn clone(&self) -> Self {
+        match self {
+            &PfPairingHeap::Empty => PfPairingHeap::Empty,
+            &PfPairingHeap::Node {
+                ref value, ref children
+            } => PfPairingHeap::Node {
+                value: value.clone(),
+                children: children.clone()
+            }
+        }
+    }
+}
+
+impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfPairingHeap<T> {
+    fn new() -> Self {
+        PfPairingHeap::Empty
+    }
+
+    fn is_empty(&self) -> bool {
+        if let PfPairingHeap::Empty = *self {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn insert(&self, v: T) -> Self {
+        self.merge(&PfPairingHeap::Node {
+            value: v,
+            children: PfList::new()
+        })
+    }
+
+    fn merge(&self, h: &Self) -> Self {
+        use self::PfPairingHeap::*;
+        match (self, h) {
+            (&Empty, h) => h.clone(),
+            (h, &Empty) => h.clone(),
+            (&Node { value: ref v1, children: ref hs1 },
+             &Node { value: ref v2, children: ref hs2 }
+            ) => {
+                if v1 < v2 {
+                    PfPairingHeap::Node {
+                        value: v1.clone(),
+                        children: hs1.push(Node {
+                            value: v2.clone(),
+                            children: hs2.clone()
+                        })
+                    }
+                } else {
+                    PfPairingHeap::Node {
+                        value: v2.clone(),
+                        children: hs2.push(Node {
+                            value: v1.clone(),
+                            children: hs1.clone()
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    fn find_min(&self) -> Result<T, &str> {
+        match self {
+            &PfPairingHeap::Empty => Err("find_min for empty"),
+            &PfPairingHeap::Node { ref value, .. } => Ok(value.clone())
+        }
+    }
+
+    fn delete_min(&self) -> Result<Self, &str> {
+        match self {
+            &PfPairingHeap::Empty => Err("delete_min for empty"),
+            &PfPairingHeap::Node { ref children, .. } =>
+                Ok(PfPairingHeap::merge_pairs(children.clone()))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test() {
-        let h1 = PfLeftistHeap::<i32>::new();
+    fn test_pfheap<Heap: PfHeap<i32>>() {
+        let h1 = Heap::new();
         assert!(h1.is_empty());
         let h2 = h1.insert(42);
         assert_eq!(42, h2.find_min().unwrap());
@@ -148,5 +254,15 @@ mod tests {
         assert_eq!(3, h4.find_min().unwrap());
         assert_eq!(8, h5.find_min().unwrap());
         assert_eq!(42, h6.find_min().unwrap());
+    }
+
+    #[test]
+    fn test_pf_leftish_heap() {
+        test_pfheap::<PfLeftistHeap<i32>>();
+    }
+
+    #[test]
+    fn test_pf_pairing_heap() {
+        test_pfheap::<PfPairingHeap<i32>>();
     }
 }
