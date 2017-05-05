@@ -2,3 +2,10 @@
 name = "pfds"
 version = "0.1.0"
 authors = ["Shinichiro Hamaji <shinichiro.hamaji@gmail.com>"]
+
+[dependencies]
+bencher = "0.1.2"
+
+[[bench]]
+name = "queue"
+harness = false

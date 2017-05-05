@@ -3,7 +3,7 @@ use std::fmt::Display;
 
 use list::PfList;
 
-trait PfQueue<T: Clone + Display + Debug>: Sized {
+pub trait PfQueue<T: Clone + Display + Debug>: Sized {
     fn new() -> Self;
     fn is_empty(&self) -> bool;
     fn snoc(&self, v: T) -> Self;
@@ -80,4 +80,3 @@ mod tests {
         test_pf_queue::<PfBatchedQueue<i32>>();
     }
 }
-
