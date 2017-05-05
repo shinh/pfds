@@ -39,7 +39,7 @@ impl<T: Clone + Debug> PfList<T> {
 
     pub fn pop(&self) -> Result<(T, Self), &str> {
         match *self.head {
-            PfListNode::Empty => Err("pop for empty"),
+            PfListNode::Empty => Err("pop for empty list"),
             PfListNode::Node { ref value, ref next } =>
                 Ok((value.clone(), PfList { head: next.clone() }))
         }

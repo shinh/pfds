@@ -111,14 +111,14 @@ impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfLeftistHeap<T> {
 
     fn find_min(&self) -> Result<T, &str> {
         match self {
-            &PfLeftistHeap::Empty => Err("find_min for empty"),
+            &PfLeftistHeap::Empty => Err("find_min for empty leftish heap"),
             &PfLeftistHeap::Node { ref value, .. } => Ok(value.clone())
         }
     }
 
     fn delete_min(&self) -> Result<Self, &str> {
         match self {
-            &PfLeftistHeap::Empty => Err("delete_min for empty"),
+            &PfLeftistHeap::Empty => Err("delete_min for empty leftish heap"),
             &PfLeftistHeap::Node { ref left, ref right, .. } =>
                 Ok(left.merge(right))
         }
@@ -216,14 +216,14 @@ impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfPairingHeap<T> {
 
     fn find_min(&self) -> Result<T, &str> {
         match self {
-            &PfPairingHeap::Empty => Err("find_min for empty"),
+            &PfPairingHeap::Empty => Err("find_min for empty pairing heap"),
             &PfPairingHeap::Node { ref value, .. } => Ok(value.clone())
         }
     }
 
     fn delete_min(&self) -> Result<Self, &str> {
         match self {
-            &PfPairingHeap::Empty => Err("delete_min for empty"),
+            &PfPairingHeap::Empty => Err("delete_min for empty pairing heap"),
             &PfPairingHeap::Node { ref children, .. } =>
                 Ok(PfPairingHeap::merge_pairs(children.clone()))
         }
@@ -234,7 +234,7 @@ impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfPairingHeap<T> {
 mod tests {
     use super::*;
 
-    fn test_pfheap<Heap: PfHeap<i32>>() {
+    fn test_pf_heap<Heap: PfHeap<i32>>() {
         let h1 = Heap::new();
         assert!(h1.is_empty());
         let h2 = h1.insert(42);
@@ -258,11 +258,11 @@ mod tests {
 
     #[test]
     fn test_pf_leftish_heap() {
-        test_pfheap::<PfLeftistHeap<i32>>();
+        test_pf_heap::<PfLeftistHeap<i32>>();
     }
 
     #[test]
     fn test_pf_pairing_heap() {
-        test_pfheap::<PfPairingHeap<i32>>();
+        test_pf_heap::<PfPairingHeap<i32>>();
     }
 }
