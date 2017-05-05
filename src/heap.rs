@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::fmt::Display;
 use std::rc::Rc;
 
-trait Heap<T: Ord + Copy + Display + Debug>: Sized {
+trait PfHeap<T: Ord + Copy + Display + Debug>: Sized {
     fn is_empty(&self) -> bool;
     fn insert(&self, v: T) -> Self;
     fn merge(&self, h: &Self) -> Self;
@@ -29,11 +29,9 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
     }
 
     fn rank(&self) -> i32 {
-        match *self {
-            PfLeftistHeap::Empty => 0,
-            PfLeftistHeap::Node {
-                rank, value: _, left: _, right: _
-            } => rank
+        match self {
+            &PfLeftistHeap::Empty => 0,
+            &PfLeftistHeap::Node { rank, .. } => rank
         }
     }
 
@@ -70,7 +68,7 @@ impl<T: Ord + Copy + Display + Debug> PfLeftistHeap<T> {
     }
 }
 
-impl<T: Ord + Copy + Display + Debug> Heap<T> for PfLeftistHeap<T> {
+impl<T: Ord + Copy + Display + Debug> PfHeap<T> for PfLeftistHeap<T> {
     fn is_empty(&self) -> bool {
         if let PfLeftistHeap::Empty = *self {
             return true;
@@ -89,16 +87,19 @@ impl<T: Ord + Copy + Display + Debug> Heap<T> for PfLeftistHeap<T> {
     }
 
     fn merge(&self, h: &Self) -> Self {
+        use self::PfLeftistHeap::*;
         match (self, h) {
-            (&PfLeftistHeap::Empty, h) => h.copy(),
-            (h, &PfLeftistHeap::Empty) => h.copy(),
-            (&PfLeftistHeap::Node { rank: _, value: v1, left: ref a1, right: ref b1 },
-             &PfLeftistHeap::Node { rank: _, value: v2, left: ref a2, right: ref b2 }
+            (&Empty, h) => h.copy(),
+            (h, &Empty) => h.copy(),
+            (&Node { rank: _, value: v1, left: ref a1, right: ref b1 },
+             &Node { rank: _, value: v2, left: ref a2, right: ref b2 }
             ) => {
                 if v1 < v2 {
-                    PfLeftistHeap::make_heap(v1, a1.clone(), Rc::new(b1.merge(h)))
+                    PfLeftistHeap::make_heap(v1, a1.clone(),
+                                             Rc::new(b1.merge(h)))
                 } else {
-                    PfLeftistHeap::make_heap(v2, a2.clone(), Rc::new(self.merge(b2)))
+                    PfLeftistHeap::make_heap(v2, a2.clone(),
+                                             Rc::new(self.merge(b2)))
                 }
             }
         }
@@ -107,17 +108,15 @@ impl<T: Ord + Copy + Display + Debug> Heap<T> for PfLeftistHeap<T> {
     fn find_min(&self) -> Result<T, &str> {
         match self {
             &PfLeftistHeap::Empty => Err("find_min for empty"),
-            &PfLeftistHeap::Node { rank: _, value: v, left: _, right: _ } =>
-                Ok(v)
+            &PfLeftistHeap::Node { value, .. } => Ok(value)
         }
     }
 
     fn delete_min(&self) -> Result<Self, &str> {
         match self {
             &PfLeftistHeap::Empty => Err("delete_min for empty"),
-            &PfLeftistHeap::Node { rank: _, value: _, left: ref a, right: ref b } => {
-                Ok((*a).merge(&*b))
-            }
+            &PfLeftistHeap::Node { ref left, ref right, .. } =>
+                Ok(left.merge(right))
         }
     }
 }
