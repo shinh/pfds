@@ -141,7 +141,7 @@ impl<T: Ord + Clone + Display + Debug> PfPairingHeap<T> {
             Ok((h1, hs)) => {
                 match hs.pop() {
                     Ok((h2, hs)) => {
-                        h1.merge(&h2).merge(&PfPairingHeap::merge_pairs(hs))
+                        h1.merge(&h2).merge(&Self::merge_pairs(hs))
                     }
                     Err(_) => h1
                 }
@@ -225,7 +225,7 @@ impl<T: Ord + Clone + Display + Debug> PfHeap<T> for PfPairingHeap<T> {
         match self {
             &PfPairingHeap::Empty => Err("delete_min for empty pairing heap"),
             &PfPairingHeap::Node { ref children, .. } =>
-                Ok(PfPairingHeap::merge_pairs(children.clone()))
+                Ok(Self::merge_pairs(children.clone()))
         }
     }
 }

@@ -21,16 +21,16 @@ pub struct PfBatchedQueue<T: Clone + Display + Debug> {
 impl<T: Clone + Display + Debug> PfBatchedQueue<T> {
     fn checkf(f: &PfList<T>, r: &PfList<T>) -> Self {
         if f.is_empty() {
-            PfBatchedQueue { f: r.rev(), r: PfList::new() }
+            Self { f: r.rev(), r: PfList::new() }
         } else {
-            PfBatchedQueue { f: f.clone(), r: r.clone() }
+            Self { f: f.clone(), r: r.clone() }
         }
     }
 }
 
 impl<T: Clone + Display + Debug> PfQueue<T> for PfBatchedQueue<T> {
     fn new() -> Self {
-        PfBatchedQueue {
+        Self {
             f: PfList::new(),
             r: PfList::new()
         }
@@ -41,7 +41,7 @@ impl<T: Clone + Display + Debug> PfQueue<T> for PfBatchedQueue<T> {
     }
 
     fn snoc(&self, v: T) -> Self {
-        PfBatchedQueue::checkf(&self.f, &self.r.push(v))
+        Self::checkf(&self.f, &self.r.push(v))
     }
 
     fn head(&self) -> Result<T, &str> {
@@ -53,7 +53,7 @@ impl<T: Clone + Display + Debug> PfQueue<T> for PfBatchedQueue<T> {
 
     fn tail(&self) -> Result<Self, &str> {
         match self.f.pop() {
-            Ok((_, f)) => Ok(PfBatchedQueue::checkf(&f, &self.r)),
+            Ok((_, f)) => Ok(Self::checkf(&f, &self.r)),
             Err(_) => Err("tail for empty batched queue")
         }
     }
