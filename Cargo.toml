@@ -1,0 +1,4 @@
+[package]
+name = "pfds"
+version = "0.1.0"
+authors = ["Shinichiro Hamaji <shinichiro.hamaji@gmail.com>"]
