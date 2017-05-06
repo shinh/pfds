@@ -1,24 +1,45 @@
 use std::boxed::Box;
+use std::fmt;
+use std::fmt::Debug;
+use std::rc::Rc;
 
-pub struct Thunk<'a, T: 'a + Clone> {
+struct Impl<'a, T: 'a + Clone + Debug> {
     thunk: Box<Fn() -> T + 'a>,
     value: Option<T>,
 }
 
-impl<'a, T: Clone> Thunk<'a, T> {
+#[derive(Clone, Debug)]
+pub struct Thunk<'a, T: 'a + Clone + Debug> {
+    imp: Rc<Impl<'a, T>>
+}
+
+impl<'a, T: 'a + Clone + Debug> Debug for Impl<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self.value {
+            Some(ref v) => f.write_fmt(format_args!("Impl({:?})", v)),
+            None => f.write_str("Impl(*todo*)"),
+        }
+    }
+}
+
+impl<'a, T: Clone + Debug> Thunk<'a, T> {
     pub fn new<F>(t: F) -> Self
         where F: Fn() -> T + 'a {
         Thunk {
-            thunk: Box::new(t),
-            value: None }
+            imp: Rc::new(Impl {
+                thunk: Box::new(t),
+                value: None
+            })
+        }
     }
 
     pub fn eval(&mut self) -> T {
-        match self.value {
+        let imp = Rc::get_mut(&mut self.imp).unwrap();
+        match imp.value {
             Some(ref value) => value.clone(),
             None => {
-                let value = (self.thunk)();
-                self.value = Some(value.clone());
+                let value = (imp.thunk)();
+                imp.value = Some(value.clone());
                 value
             }
         }
