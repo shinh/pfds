@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -10,7 +11,7 @@ struct Impl<'a, T: 'a + Clone + Debug> {
 
 #[derive(Clone, Debug)]
 pub struct Thunk<'a, T: 'a + Clone + Debug> {
-    imp: Rc<Impl<'a, T>>
+    imp: Rc<RefCell<Impl<'a, T>>>
 }
 
 impl<'a, T: 'a + Clone + Debug> Debug for Impl<'a, T> {
@@ -26,23 +27,26 @@ impl<'a, T: Clone + Debug> Thunk<'a, T> {
     pub fn new<F>(t: F) -> Self
         where F: Fn() -> T + 'a {
         Thunk {
-            imp: Rc::new(Impl {
+            imp: Rc::new(RefCell::new(Impl {
                 thunk: Box::new(t),
                 value: None
-            })
+            }))
         }
     }
 
-    pub fn eval(&mut self) -> T {
-        let imp = Rc::get_mut(&mut self.imp).unwrap();
-        match imp.value {
-            Some(ref value) => value.clone(),
+    pub fn eval(&self) -> T {
+        let mut imp = self.imp.borrow_mut();
+        let value = match imp.value {
+            Some(ref value) => {
+                return value.clone()
+            }
             None => {
                 let value = (imp.thunk)();
-                imp.value = Some(value.clone());
                 value
             }
-        }
+        };
+        imp.value = Some(value.clone());
+        value
     }
 }
 
@@ -65,11 +69,11 @@ mod tests {
 
     #[test]
     fn test_lazy() {
-        let mut result = lazy!(2 + 3);
+        let result = lazy!(2 + 3);
         assert_eq!(5, result.eval());
         assert_eq!(5, result.eval());
 
-        let mut result = lazy!(inc());
+        let result = lazy!(inc());
         assert_eq!(8, result.eval());
         assert_eq!(8, result.eval());
     }
