@@ -78,6 +78,19 @@ impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
         }
     }
 
+    pub fn take_n(&self, n: usize) -> Self {
+        if n == 0 {
+            return Self::empty();
+        }
+        match self.eval() {
+            StreamNode::Nil => Self::empty(),
+            StreamNode::Cons(v, s) => Stream::new(lazy!(
+                StreamNode::Cons(v.clone(),
+                                 Stream::new(s.clone()).take_n(n-1).head)
+            ))
+        }
+    }
+
     fn reverse_impl(s: Thunk<'a, StreamNode<'a, T>>,
                     r: Thunk<'a, StreamNode<'a, T>>)
                     -> Thunk<'a, StreamNode<'a, T>> {
@@ -111,5 +124,8 @@ mod tests {
 
         let s = Stream::make(1..4).reverse();
         assert_eq!(vec![3,2,1], s.iter().collect::<Vec<i32>>());
+
+        let s = Stream::make(1..4).concat(Stream::make(5..10));
+        assert_eq!(vec![1,2,3,5,6], s.take_n(5).iter().collect::<Vec<i32>>());
     }
 }
