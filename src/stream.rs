@@ -1,19 +1,18 @@
 // 4.2 Stream
 
 use std::fmt::Debug;
-use std::rc::Rc;
 
 use lazy::Thunk;
 
 #[derive(Clone, Debug)]
 enum StreamNode<'a, T: 'a + Clone + Debug> {
     Nil,
-    Cons(T, Rc<Thunk<'a, StreamNode<'a, T>>>)
+    Cons(T, Thunk<'a, StreamNode<'a, T>>)
 }
 
 #[derive(Clone, Debug)]
 pub struct Stream<'a, T: 'a + Clone + Debug> {
-    head: Rc<Thunk<'a, StreamNode<'a, T>>>
+    head: Thunk<'a, StreamNode<'a, T>>
 }
 
 impl<'a, T: 'a + Clone + Debug> Iterator for Stream<'a, T> {
@@ -30,23 +29,23 @@ impl<'a, T: 'a + Clone + Debug> Iterator for Stream<'a, T> {
 }
 
 impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
-    fn new(t: Rc<Thunk<'a, StreamNode<'a, T>>>) -> Self {
+    fn new(t: Thunk<'a, StreamNode<'a, T>>) -> Self {
         Stream { head: t }
     }
 
-    fn eval(&mut self) -> StreamNode<'a, T> {
+    fn eval(&self) -> StreamNode<'a, T> {
         self.head.eval()
     }
 
     pub fn empty() -> Self {
-        Stream::new(Rc::new(lazy!(StreamNode::Nil)))
+        Stream::new(lazy!(StreamNode::Nil))
     }
 
-    pub fn push(&mut self, v: T) -> Self {
+    pub fn push(&self, v: T) -> Self {
         let tail = self.head.clone();
-        Stream::new(Rc::new(lazy!(
+        Stream::new(lazy!(
             StreamNode::Cons(v.clone(), tail.clone())
-        )))
+        ))
     }
 
     pub fn make<I>(it: I) -> Self
@@ -58,25 +57,42 @@ impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
         r
     }
 
-    pub fn iter(&mut self) -> Self {
+    pub fn iter(&self) -> Self {
         self.clone()
     }
 
-    pub fn head(&mut self) -> Result<T, &str> {
+    pub fn head(&self) -> Result<T, &str> {
         match self.eval() {
             StreamNode::Nil => Err("head for empty stream"),
             StreamNode::Cons(v, _) => Ok(v),
         }
     }
 
-    pub fn concat(&mut self, t: Self) -> Self {
+    pub fn concat(&self, t: Self) -> Self {
         match self.eval() {
             StreamNode::Nil => t,
-            StreamNode::Cons(v, s) => Stream::new(Rc::new(lazy!(
+            StreamNode::Cons(v, s) => Stream::new(lazy!(
                 StreamNode::Cons(
                     v.clone(), Stream::new(s.clone()).concat(t.clone()).head)
-            )))
+            ))
         }
+    }
+
+    fn reverse_impl(s: Thunk<'a, StreamNode<'a, T>>,
+                    r: Thunk<'a, StreamNode<'a, T>>)
+                    -> Thunk<'a, StreamNode<'a, T>> {
+        match s.eval() {
+            StreamNode::Nil => r,
+            StreamNode::Cons(v, s) => {
+                let c = lazy!(StreamNode::Cons(v.clone(), r.clone()));
+                lazy!(Self::reverse_impl(s.clone(), c.clone()).eval())
+            }
+        }
+    }
+
+    pub fn reverse(&self) -> Self {
+        Stream::new(Self::reverse_impl(
+            self.head.clone(), lazy!(StreamNode::Nil)))
     }
 }
 
@@ -86,8 +102,14 @@ mod tests {
 
     #[test]
     fn test_stream() {
-        let mut s = Stream::make(1..4);
+        let s = Stream::make(1..4);
         assert_eq!(1, s.head().unwrap());
         assert_eq!(vec![1,2,3], s.iter().collect::<Vec<i32>>());
+
+        let s = Stream::make(1..4).concat(Stream::make(5..7));
+        assert_eq!(vec![1,2,3,5,6], s.iter().collect::<Vec<i32>>());
+
+        let s = Stream::make(1..4).reverse();
+        assert_eq!(vec![3,2,1], s.iter().collect::<Vec<i32>>());
     }
 }
