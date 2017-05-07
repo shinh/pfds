@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use lazy::Thunk;
 
 #[derive(Clone, Debug)]
-enum StreamNode<'a, T: 'a + Clone + Debug> {
+pub enum StreamNode<'a, T: 'a + Clone + Debug> {
     Nil,
     Cons(T, Thunk<'a, StreamNode<'a, T>>)
 }
@@ -29,11 +29,11 @@ impl<'a, T: 'a + Clone + Debug> Iterator for Stream<'a, T> {
 }
 
 impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
-    fn new(t: Thunk<'a, StreamNode<'a, T>>) -> Self {
+    pub fn new(t: Thunk<'a, StreamNode<'a, T>>) -> Self {
         Stream { head: t }
     }
 
-    fn eval(&self) -> StreamNode<'a, T> {
+    pub fn eval(&self) -> StreamNode<'a, T> {
         self.head.eval()
     }
 
@@ -72,6 +72,13 @@ impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
         match self.eval() {
             StreamNode::Nil => Err("tail for empty stream"),
             StreamNode::Cons(_, t) => Ok(Stream::new(t)),
+        }
+    }
+
+    pub fn pop(&self) -> Result<(T, Self), &str> {
+        match self.eval() {
+            StreamNode::Nil => Err("pop for empty stream"),
+            StreamNode::Cons(v, t) => Ok((v, Stream::new(t))),
         }
     }
 

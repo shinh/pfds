@@ -46,32 +46,47 @@ fn bench_pf_batched_queue_snoc(b: &mut Bencher) {
     bench_pf_queue_snoc::<PfBatchedQueue<i32>>(b);
 }
 
-fn bench_pf_banker_queue_snoc(b: &mut Bencher) {
-    bench_pf_queue_snoc::<PfBankerQueue<i32>>(b);
-}
-
 fn bench_pf_batched_queue_tail(b: &mut Bencher) {
     bench_pf_queue_tail::<PfBatchedQueue<i32>>(b);
-}
-
-fn bench_pf_banker_queue_tail(b: &mut Bencher) {
-    bench_pf_queue_tail::<PfBankerQueue<i32>>(b);
 }
 
 fn bench_pf_batched_queue_kill_batched(b: &mut Bencher) {
     bench_pf_queue_kill_batched::<PfBatchedQueue<i32>>(b);
 }
 
+fn bench_pf_banker_queue_snoc(b: &mut Bencher) {
+    bench_pf_queue_snoc::<PfBankerQueue<i32>>(b);
+}
+
+fn bench_pf_banker_queue_tail(b: &mut Bencher) {
+    bench_pf_queue_tail::<PfBankerQueue<i32>>(b);
+}
+
 fn bench_pf_banker_queue_kill_batched(b: &mut Bencher) {
     bench_pf_queue_kill_batched::<PfBankerQueue<i32>>(b);
 }
 
+fn bench_pf_real_time_queue_snoc(b: &mut Bencher) {
+    bench_pf_queue_snoc::<PfRealTimeQueue<i32>>(b);
+}
+
+fn bench_pf_real_time_queue_tail(b: &mut Bencher) {
+    bench_pf_queue_tail::<PfRealTimeQueue<i32>>(b);
+}
+
+fn bench_pf_real_time_queue_kill_batched(b: &mut Bencher) {
+    bench_pf_queue_kill_batched::<PfRealTimeQueue<i32>>(b);
+}
+
 benchmark_group!(benches,
-                 bench_pf_batched_queue_snoc,
+                 bench_pf_banker_queue_kill_batched,
                  bench_pf_banker_queue_snoc,
-                 bench_pf_batched_queue_tail,
                  bench_pf_banker_queue_tail,
                  bench_pf_batched_queue_kill_batched,
-                 bench_pf_banker_queue_kill_batched
+                 bench_pf_batched_queue_snoc,
+                 bench_pf_batched_queue_tail,
+                 bench_pf_real_time_queue_kill_batched,
+                 bench_pf_real_time_queue_snoc,
+                 bench_pf_real_time_queue_tail
 );
 benchmark_main!(benches);

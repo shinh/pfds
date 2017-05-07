@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use lazy::Thunk;
 use list::PfList;
 use stream::Stream;
 
@@ -122,6 +123,88 @@ impl<'a, T: 'a + Clone + Display + Debug> PfQueue<T> for PfBankerQueue<'a, T> {
     }
 }
 
+// 7.2 Real time queue
+#[derive(Clone, Debug)]
+pub struct PfRealTimeQueue<'a, T: 'a + Clone + Display + Debug> {
+    f: Stream<'a, T>,
+    r: PfList<T>,
+    s: Stream<'a, T>
+}
+
+impl<'a, T: 'a + Clone + Display + Debug> PfRealTimeQueue<'a, T> {
+    fn rotate(f: Stream<'a, T>, r: PfList<T>, a: Stream<'a, T>)
+              -> Stream<'a, T> {
+        let (y, ys) = r.pop().unwrap();
+        let na = a.push(y);
+        match f.pop() {
+            Ok((x, xs)) => {
+                Stream::new(lazy!(
+                    Self::rotate(xs.clone(), ys.clone(), na.clone()).eval()
+                )).push(x.clone())
+            }
+            Err(_) => {
+                na
+            }
+        }
+    }
+
+    fn exec(f: Stream<'a, T>, r: PfList<T>, s: Stream<'a, T>) -> Self {
+        match s.tail() {
+            Ok(t) => {
+                return Self {
+                    f: f.clone(),
+                    r: r.clone(),
+                    s: t.clone()
+                }
+            }
+            Err(_) => {
+                let fd = Self::rotate(f.clone(),
+                                      r.clone(),
+                                      Stream::empty());
+                return Self {
+                    f: fd.clone(),
+                    r: PfList::new(),
+                    s: fd.clone()
+                }
+            }
+        }
+    }
+}
+
+impl<'a, T: 'a + Clone + Display + Debug> PfQueue<T>
+    for PfRealTimeQueue<'a, T> {
+    fn new() -> Self {
+        Self {
+            f: Stream::empty(),
+            r: PfList::new(),
+            s: Stream::empty()
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.f.head().is_err()
+    }
+
+    fn snoc(&self, v: T) -> Self {
+        let r = self.r.push(v);
+        Self::exec(self.f.clone(), r, self.s.clone())
+    }
+
+    fn head(&self) -> Result<T, &str> {
+        match self.f.head() {
+            Ok(v) => Ok(v),
+            Err(_) => Err("head for empty real time queue")
+        }
+    }
+
+    fn tail(&self) -> Result<Self, &str> {
+        match self.f.tail() {
+            Ok(t) => Ok(Self::exec(t, self.r.clone(), self.s.clone())),
+            Err(_) => Err("tail for empty real time queue")
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -146,5 +229,10 @@ mod tests {
     #[test]
     fn test_pf_banker_queue() {
         test_pf_queue::<PfBankerQueue<i32>>();
+    }
+
+    #[test]
+    fn test_pf_real_time_queue() {
+        test_pf_queue::<PfRealTimeQueue<i32>>();
     }
 }
