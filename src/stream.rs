@@ -68,6 +68,13 @@ impl<'a, T: 'a + Clone + Debug> Stream<'a, T> {
         }
     }
 
+    pub fn tail(&self) -> Result<Self, &str> {
+        match self.eval() {
+            StreamNode::Nil => Err("tail for empty stream"),
+            StreamNode::Cons(_, t) => Ok(Stream::new(t)),
+        }
+    }
+
     pub fn concat(&self, t: Self) -> Self {
         match self.eval() {
             StreamNode::Nil => t,

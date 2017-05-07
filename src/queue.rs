@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::fmt::Display;
 
 use list::PfList;
+use stream::Stream;
 
 pub trait PfQueue<T: Clone + Display + Debug>: Sized {
     fn new() -> Self;
@@ -59,6 +60,68 @@ impl<T: Clone + Display + Debug> PfQueue<T> for PfBatchedQueue<T> {
     }
 }
 
+// 6.3.2 Banker queue
+#[derive(Debug)]
+pub struct PfBankerQueue<'a, T: 'a + Clone + Display + Debug> {
+    fl: i32,
+    f: Stream<'a, T>,
+    rl: i32,
+    r: Stream<'a, T>,
+}
+
+impl<'a, T: 'a + Clone + Display + Debug> PfBankerQueue<'a, T> {
+    fn check(fl: i32, f: Stream<'a, T>, rl: i32, r: Stream<'a, T>) -> Self {
+        if rl < fl {
+            Self {
+                fl: fl,
+                f: f.clone(),
+                rl: rl,
+                r: r.clone(),
+            }
+        } else {
+            Self {
+                fl: fl + rl,
+                f: f.concat(r.reverse()),
+                rl: 0,
+                r: Stream::empty(),
+            }
+        }
+    }
+}
+
+impl<'a, T: 'a + Clone + Display + Debug> PfQueue<T> for PfBankerQueue<'a, T> {
+    fn new() -> Self {
+        Self {
+            fl: 0,
+            f: Stream::empty(),
+            rl: 0,
+            r: Stream::empty()
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.fl == 0
+    }
+
+    fn snoc(&self, v: T) -> Self {
+        Self::check(self.fl, self.f.clone(), self.rl + 1, self.r.push(v))
+    }
+
+    fn head(&self) -> Result<T, &str> {
+        match self.f.head() {
+            Ok(v) => Ok(v),
+            Err(_) => Err("head for empty banker queue")
+        }
+    }
+
+    fn tail(&self) -> Result<Self, &str> {
+        match self.f.tail() {
+            Ok(f) => Ok(Self::check(self.fl - 1, f, self.rl, self.r.clone())),
+            Err(_) => Err("tail for empty banker queue")
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -78,5 +141,10 @@ mod tests {
     #[test]
     fn test_pf_batched_queue() {
         test_pf_queue::<PfBatchedQueue<i32>>();
+    }
+
+    #[test]
+    fn test_pf_banker_queue() {
+        test_pf_queue::<PfBankerQueue<i32>>();
     }
 }
