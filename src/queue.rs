@@ -4,7 +4,7 @@ use std::fmt::Display;
 use list::PfList;
 use stream::Stream;
 
-pub trait PfQueue<T: Clone + Display + Debug>: Sized {
+pub trait PfQueue<T: Clone + Display + Debug>: Clone + Sized {
     fn new() -> Self;
     fn is_empty(&self) -> bool;
     fn snoc(&self, v: T) -> Self;
@@ -13,7 +13,7 @@ pub trait PfQueue<T: Clone + Display + Debug>: Sized {
 }
 
 // 5.2 Batched queue
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PfBatchedQueue<T: Clone + Display + Debug> {
     f: PfList<T>,
     r: PfList<T>,
@@ -61,7 +61,7 @@ impl<T: Clone + Display + Debug> PfQueue<T> for PfBatchedQueue<T> {
 }
 
 // 6.3.2 Banker queue
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PfBankerQueue<'a, T: 'a + Clone + Display + Debug> {
     fl: i32,
     f: Stream<'a, T>,
