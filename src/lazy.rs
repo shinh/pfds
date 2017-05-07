@@ -37,13 +37,8 @@ impl<'a, T: Clone + Debug> Thunk<'a, T> {
     pub fn eval(&self) -> T {
         let mut imp = self.imp.borrow_mut();
         let value = match imp.value {
-            Some(ref value) => {
-                return value.clone()
-            }
-            None => {
-                let value = (imp.thunk)();
-                value
-            }
+            Some(ref value) => return value.clone(),
+            None => (imp.thunk)()
         };
         imp.value = Some(value.clone());
         value
@@ -74,7 +69,10 @@ mod tests {
         assert_eq!(5, result.eval());
 
         let result = lazy!(inc());
+        unsafe { assert_eq!(7, V); }
         assert_eq!(8, result.eval());
+        unsafe { assert_eq!(8, V); }
         assert_eq!(8, result.eval());
+        unsafe { assert_eq!(8, V); }
     }
 }
